@@ -1,126 +1,145 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
-    <title>رحلة الفراولة</title>
-    <style>
-      html, body {
-        background-size: auto;
-        background-color: #444444;
-      }
-      #unity-loading-bar {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        z-index: 10;
-        pointer-events: none;
-      }
-
+<head>
+  <meta charset="utf-8">
+  
+  <title>سلة الفواكه </title>
+  
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #444444;
+      overflow: hidden;
+    }
+    #unity-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background-color: #444444;
+    }
+    #unity-loading-bar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #unity-logo1 {
+      width: 40vw;
+      max-width: 280px;
+      height: auto;
+    }
+    #unity-progress-bar {
+      width: 764px;
+      max-width: 90vw;
+      height: 40px;
+      margin-top: 60px;
+      background: url('bar.png') no-repeat center center;
+      background-size: 100% 100%;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      transform: scale(0.7);
+      transform-origin: top center;
+    }
+    #unity-progress-bar-fill {
+      position: absolute;
+      top: 7px;
+      left: 6px;
+      height: calc(100% - 14px);
+      width: 0%;
+      background-color: #55CAC2;
+      transition: width 0.3s ease;
+      border-radius: 20px 0 0 20px;
+    }
+    @media (max-width: 768px) {
       #unity-logo1 {
-        width: 40vw;
-        max-width: 280px;
-        height: auto;
+        width: 50vw;
+        max-width: 200px;
       }
-
       #unity-progress-bar {
-        width: 764px;
-        max-width: 90vw;
-        height: 40px;
-        margin-top: 60px;
-        background: url('bar.png') no-repeat center center;
-        background-size: 100% 100%;
-        position: relative;
-        overflow: hidden;
-        border-radius: 10px;
-        transform: scale(0.7);
-        transform-origin: top center;
+        width: 550px;
+        height: 30px;
+        margin-top: 0px;
       }
-
-      #unity-progress-bar-fill {
-        position: absolute;
-        top: 7px;
-        left: 6px;
-        height: calc(100% - 14px);
-        width: 0%;
-        background-color: #55CAC2;
-        transition: width 0.3s ease;
-        border-radius: 20px 0 0 20px;
-      }
-
-      @media (max-width: 768px) {
-        #unity-logo1 {
-          width: 50vw;
-          max-width: 200px;
-        }
-
-        #unity-progress-bar {
-          width: 550px;
-          height: 30px;
-          margin-top: 0px;
-        }
-
-        #unity-progress-bar-fill {
+       #unity-progress-bar-fill {
+          position: absolute;
           border-radius: 5px 0 0 5px;
         }
-      }
-    </style>
-  <link rel="icon" type="image/x-icon" href="Logo.png">
-</head>
-  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
-    <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1" style="width: 1920px; height: 1080px; background: #231F20"></canvas>
+    }
+  </style>
 
-    <!-- ✅ Added Loading Logo and Progress Bar -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" type="image/png" href="Logo.png">
+<style id="unity-fit-centered-style">
+  :root{ color-scheme: light dark; }
+  html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
+  #unity-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; height: 100dvh; }
+  #unity-canvas { display: block; background: #231F20; transform-origin: center center; width: 100%; height: 100%; image-rendering: auto; }
+  #unity-loading-bar { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; pointer-events: none; }
+</style>
+
+</head>
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="unity-loading-bar">
       <img id="unity-logo1" src="logo1.png" alt="Loading Logo">
       <div id="unity-progress-bar">
         <div id="unity-progress-bar-fill"></div>
       </div>
     </div>
-
-    <script src="Build/Build.loader.js"></script>
-    <script>
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-
-        var canvas = document.querySelector("#unity-canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "fixed";
-
-        document.body.style.textAlign = "left";
-      }
-
-      createUnityInstance(document.querySelector("#unity-canvas"), {
-        arguments: [],
-        dataUrl: "Build/Build.data.unityweb",
-        frameworkUrl: "Build/Build.framework.js.unityweb",
-        codeUrl: "Build/Build.wasm.unityweb",
+  </div>
+  <script>
+    window.addEventListener("load", function () {
+      const canvas = document.querySelector("#unity-canvas");
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBarFill = document.querySelector("#unity-progress-bar-fill");
+      const buildUrl = "Build";
+      const loaderUrl = buildUrl + "/Build.loader.js";
+      const config = {
+        dataUrl: buildUrl + "/Build.data.unityweb",
+        frameworkUrl: buildUrl + "/Build.framework.js.unityweb",
+        codeUrl: buildUrl + "/Build.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "AQTAR",
-        productName: "رحلة الفراولة",
-        productVersion: "1.0"
-      }, (progress) => {
-        // ✅ Update progress bar fill
-        document.getElementById("unity-progress-bar-fill").style.width = (progress * 100) + "%";
-      }).then(() => {
-        // ✅ Hide loading bar when done
-        document.getElementById("unity-loading-bar").style.display = "none";
-      }).catch((message) => {
-        alert("Unity load failed: " + message);
-      });
-    </script>
-  
+        productName: "البرتقالة الذكية",
+        productVersion: "1.0",
+  matchWebGLToCanvasSize: true,
+  devicePixelRatio: Math.min(2, window.devicePixelRatio || 1)
+
+
+      };
+      loadingBar.style.display = "flex";
+      const script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFill.style.width = (progress * 100) + "%";
+        }).then(() => {
+          loadingBar.style.display = "none";
+        }).catch((message) => {
+          alert("Unity load failed: " + message);
+        });
+      };
+      document.body.appendChild(script);
+    });
+  </script>
                 <script>
                     document.body.style.overflow = 'hidden';
                     // Mobile viewport settings
@@ -129,7 +148,6 @@
                         meta.name = 'viewport';
                         meta.content = 'width=device-width, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
                         document.getElementsByTagName('head')[0].appendChild(meta);
-                        
                         // Adjust canvas style for mobile devices
                         var canvas = document.querySelector('#unity-canvas');
                         if (canvas) {
@@ -188,5 +206,90 @@
           forceFullScreenOnGameStart();
       });
   </script>
+
+<script id="unity-fit-centered-script">
+(function() {
+  var TARGET_ASPECT = 1.777778;
+  var MOBILE_BASE_W = 1920;
+  var MOBILE_BASE_H = 1080;
+
+  function isMobile() { return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+  function vpWidth()  { return (window.visualViewport ? Math.floor(window.visualViewport.width)  : window.innerWidth); }
+  function vpHeight() { return Math.floor(window.visualViewport ? window.visualViewport.height : window.innerHeight); }
+  function isPortrait() { return vpHeight() >= vpWidth(); }
+
+  function sizeDesktop(canvas) {
+    var vw = vpWidth(), vh = vpHeight();
+    var viewportAspect = vw / vh;
+    var drawW, drawH;
+    if (viewportAspect > TARGET_ASPECT) { drawH = vh; drawW = Math.floor(drawH * TARGET_ASPECT); }
+    else { drawW = vw; drawH = Math.floor(drawW / TARGET_ASPECT); }
+    canvas.style.width = drawW + 'px';
+    canvas.style.height = drawH + 'px';
+    canvas.style.transform = '';
+  }
+
+  function sizeMobileLandscape(canvas) {
+    // 16:9 Letterbox في اللاندسكيب
+    var vw = vpWidth(), vh = vpHeight();
+    var viewportAspect = vw / vh;
+    var drawW, drawH;
+    if (viewportAspect > TARGET_ASPECT) { drawH = vh; drawW = Math.floor(drawH * TARGET_ASPECT); }
+    else { drawW = vw; drawH = Math.floor(drawW / TARGET_ASPECT); }
+    canvas.style.width = drawW + 'px';
+    canvas.style.height = drawH + 'px';
+    canvas.style.transform = '';
+  }
+
+  function sizeMobilePortrait(canvas) {
+    // املأ العرض والارتفاع بالكامل
+    canvas.style.transform = '';
+    canvas.style.width  = vpWidth()  + 'px';
+    canvas.style.height = vpHeight() + 'px';
+  }
+
+  function applyLayout() {
+    var container = document.getElementById('unity-container') || document.body;
+    var canvas = document.getElementById('unity-canvas') || document.querySelector('canvas');
+    if (!canvas) return;
+
+    var c = container.style;
+    c.position = 'fixed';
+    c.inset = '0';
+    c.display = 'flex';
+    c.alignItems = 'center';
+    c.justifyContent = 'center';
+    c.background = '#000';
+
+    if (isMobile()) {
+      if (isPortrait()) sizeMobilePortrait(canvas);
+      else              sizeMobileLandscape(canvas);
+    } else {
+      sizeDesktop(canvas);
+    }
+
+    document.body.style.overscrollBehavior = 'none';
+  }
+
+  var scheduled = false;
+  function schedule() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function() {
+      scheduled = false;
+      applyLayout();
+    });
+  }
+
+  window.addEventListener('load', schedule, { passive: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  window.addEventListener('orientationchange', schedule, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', schedule, { passive: true });
+    window.visualViewport.addEventListener('scroll', schedule, { passive: true });
+  }
+  applyLayout();
+})();
+</script>
 </body>
 </html>
