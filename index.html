@@ -57,20 +57,6 @@
       #unity-progress-bar { width: 550px; height: 30px; margin-top: 0; }
       #unity-progress-bar-fill { border-radius: 5px 0 0 5px; }
     }
-
-    /* Fake Fullscreen fallback (لأجهزة iOS العنيدة / PWA) */
-    .fake-fs, .fake-fs body {
-      height: 100dvh; width: 100vw; overflow: hidden !important;
-      background: #000;
-    }
-    .fake-fs #unity-container,
-    .fake-fs #unity-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100dvh !important;
-      transform: none !important;
-    }
   </style>
 </head>
 
@@ -86,7 +72,7 @@
     </div>
   </div>
 
-  <!-- سكربت تخطيط: بورتريه يملأ الشاشة، لاندسكيب 16:9 -->
+  <!-- سكربت تخطيط واحد: بورتريه يملأ الشاشة، لاندسكيب 16:9 -->
   <script>
     (function () {
       const TARGET_ASPECT = 16 / 9;
@@ -113,7 +99,7 @@
         }
 
         if (isPortrait()) {
-          // Portrait mobile: املأ العرض والارتفاع بالكامل
+          // Portrait mobile: املأ العرض والارتفاع بالكامل حسب طلبك
           canvas.style.width  = vw() + 'px';
           canvas.style.height = vh() + 'px';
           canvas.style.transform = '';
@@ -149,82 +135,6 @@
       layout();
       document.body.style.overscrollBehavior = 'none';
     })();
-  </script>
-
-  <!-- Helpers: Fullscreen قوي + بديل وهمي -->
-  <script>
-    // --- Fullscreen helpers ---
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
-
-    function canUseFullscreen() {
-      return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
-    }
-
-    async function requestFullscreenOn(elem) {
-      if (!elem) throw new Error('No element for fullscreen');
-      if (elem.requestFullscreen) return elem.requestFullscreen({ navigationUI: "hide" });
-      if (elem.webkitRequestFullscreen) return elem.webkitRequestFullscreen(); // iOS/Safari
-      throw new Error('Fullscreen API not available on element');
-    }
-
-    function exitFullscreen() {
-      if (document.exitFullscreen) return document.exitFullscreen();
-      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
-    }
-
-    function isInFullscreen() {
-      return !!(document.fullscreenElement || document.webkitFullscreenElement);
-    }
-
-    // Fallback “fake fullscreen” for stubborn iOS/PWA
-    function enableFakeFullscreen() {
-      document.documentElement.classList.add('fake-fs');
-      document.body.classList.add('fake-fs');
-      // محاولة إخفاء الأشرطة
-      setTimeout(() => window.scrollTo(0, 1), 50);
-    }
-    function disableFakeFullscreen() {
-      document.documentElement.classList.remove('fake-fs');
-      document.body.classList.remove('fake-fs');
-    }
-
-    // Try hard to go fullscreen on first user gesture
-    async function enterFullscreenStrong() {
-      try {
-        const canvas = document.getElementById('unity-canvas');
-        const container = document.getElementById('unity-container');
-
-        if (canUseFullscreen()) {
-          try {
-            await requestFullscreenOn(canvas);
-          } catch (e1) {
-            try {
-              await requestFullscreenOn(container);
-            } catch (e2) {
-              await requestFullscreenOn(document.documentElement);
-            }
-          }
-        } else {
-          // Older iOS / PWA windowed mode
-          enableFakeFullscreen();
-        }
-      } catch (err) {
-        // As a last resort, fake FS
-        enableFakeFullscreen();
-        console.warn('Native fullscreen failed, using fake:', err);
-      }
-    }
-
-    // Keep layout/state correct when FS toggles
-    document.addEventListener('fullscreenchange', () => {
-      if (!isInFullscreen()) disableFakeFullscreen();
-    });
-    document.addEventListener('webkitfullscreenchange', () => {
-      if (!isInFullscreen()) disableFakeFullscreen();
-    });
   </script>
 
   <!-- تحميل Unity + Fullscreen مرة واحدة عند أول تفاعل -->
@@ -263,18 +173,20 @@
       };
       document.body.appendChild(script);
 
-      // اطلب ملء الشاشة عند أول تفاعل (مناسب للموبايل و iPad iOS)
+      // Fullscreen عند أول تفاعل فقط (أضمن للموبايل)
       function enterFSOnce() {
-        enterFullscreenStrong();
-        window.removeEventListener('pointerdown', enterFSOnce);
+        const elem = document.documentElement;
+        if (!document.fullscreenElement) {
+          (elem.requestFullscreen ||
+           elem.webkitRequestFullscreen ||
+           elem.msRequestFullscreen ||
+           function(){ }).call(elem);
+        }
         window.removeEventListener('touchstart', enterFSOnce);
         window.removeEventListener('click', enterFSOnce);
       }
-      // استخدم pointerdown (يشمل اللمس والماوس) قبل أن يلتقط Unity الإدخال
-      window.addEventListener('pointerdown', enterFSOnce, { once: true, passive: true });
-      // ضمان إضافي لبعض الأجهزة
-      window.addEventListener('touchstart', enterFSOnce, { once: true, passive: true });
-      window.addEventListener('click', enterFSOnce, { once: true, passive: true });
+      window.addEventListener('touchstart', enterFSOnce, { once: true });
+      window.addEventListener('click', enterFSOnce, { once: true });
     });
   </script>
 </body>
