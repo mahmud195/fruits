@@ -4,40 +4,36 @@
   <meta charset="utf-8" />
   <title>سلة الفواكه</title>
 
-  <!-- Single, clean viewport -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <!-- ميتا فيوبورت مرة واحدة فقط -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
   <link rel="icon" href="Logo.png" type="image/png" />
 
   <style>
     :root { color-scheme: light dark; }
-
-    /* Reset */
     html, body {
       margin: 0; padding: 0; height: 100%; width: 100%;
       background: #000; overflow: hidden;
-      touch-action: manipulation; /* reduce double-tap zooms */
     }
 
-    /* Stable container space (use svh to avoid iOS toolbar jumps) */
+    /* الحاوية: تمركز + 100dvh لتقليل قفزات iOS */
     #unity-container {
       position: fixed; inset: 0;
       display: flex; align-items: center; justify-content: center;
-      background: #000;
-      height: 100svh; /* <-- stable viewport height on iOS 16+ */
-      width: 100vw;
+      background: #000; height: 100dvh;
     }
 
-    /* The canvas we resize explicitly (no HTML width/height attrs) */
+    /* لا تضبط خصائص width/height على عنصر الـcanvas HTML attributes */
     #unity-canvas {
       display: block;
       background: #231F20;
+      transform-origin: center center;
+      width: 100%;
+      height: 100%;
       image-rendering: auto;
-      width: 100%;   /* initial */
-      height: 100%;  /* initial */
     }
 
-    /* Loading bar */
+    /* اللودينج بار */
     #unity-loading-bar {
       position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
@@ -62,9 +58,9 @@
       #unity-progress-bar-fill { border-radius: 5px 0 0 5px; }
     }
 
-    /* Fake Fullscreen fallback */
+    /* Fake Fullscreen fallback (لأجهزة iOS العنيدة / PWA) */
     .fake-fs, .fake-fs body {
-      height: 100svh; width: 100vw; overflow: hidden !important;
+      height: 100dvh; width: 100vw; overflow: hidden !important;
       background: #000;
     }
     .fake-fs #unity-container,
@@ -72,7 +68,7 @@
       position: fixed !important;
       inset: 0 !important;
       width: 100vw !important;
-      height: 100svh !important;
+      height: 100dvh !important;
       transform: none !important;
     }
   </style>
@@ -90,68 +86,79 @@
     </div>
   </div>
 
-  <!-- Layout: lock aspect ratio with letterbox (no stretch) -->
+  <!-- سكربت تخطيط: بورتريه يملأ الشاشة، لاندسكيب 16:9 -->
   <script>
     (function () {
-      const TARGET_W = 1280;       // design width
-      const TARGET_H = 720;        // design height
-      const TARGET_ASPECT = TARGET_W / TARGET_H;
+      const TARGET_ASPECT = 16 / 9;
 
-      function sizeToLetterbox() {
-        const container = document.getElementById('unity-container');
+      const isMobile = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const vw = () => (window.visualViewport ? Math.floor(window.visualViewport.width)  : window.innerWidth);
+      const vh = () => (window.visualViewport ? Math.floor(window.visualViewport.height) : window.innerHeight);
+      const isPortrait = () => vh() >= vw();
+
+      function layout() {
         const canvas = document.getElementById('unity-canvas');
-        if (!container || !canvas) return;
+        if (!canvas) return;
 
-        // Use container's stable box (svh-based), avoids toolbar jumps on iOS
-        const W = Math.max(1, container.clientWidth);
-        const H = Math.max(1, container.clientHeight);
-        const aspect = W / H;
-
-        let drawW, drawH;
-        if (aspect > TARGET_ASPECT) {
-          // Container is wider -> full height, reduce width
-          drawH = H;
-          drawW = Math.round(drawH * TARGET_ASPECT);
-        } else {
-          // Container is taller -> full width, reduce height
-          drawW = W;
-          drawH = Math.round(drawW / TARGET_ASPECT);
+        if (!isMobile()) {
+          // Desktop: Letterbox 16:9
+          const W = vw(), H = vh(), aspect = W / H;
+          let drawW, drawH;
+          if (aspect > TARGET_ASPECT) { drawH = H; drawW = Math.round(drawH * TARGET_ASPECT); }
+          else { drawW = W; drawH = Math.round(drawW / TARGET_ASPECT); }
+          canvas.style.width = drawW + 'px';
+          canvas.style.height = drawH + 'px';
+          canvas.style.transform = '';
+          return;
         }
 
-        canvas.style.width = drawW + 'px';
-        canvas.style.height = drawH + 'px';
-
-        // Center it
-        canvas.style.marginLeft = ((W - drawW) >> 1) + 'px';
-        canvas.style.marginRight = canvas.style.marginLeft;
-        canvas.style.marginTop = ((H - drawH) >> 1) + 'px';
-        canvas.style.marginBottom = canvas.style.marginTop;
+        if (isPortrait()) {
+          // Portrait mobile: املأ العرض والارتفاع بالكامل
+          canvas.style.width  = vw() + 'px';
+          canvas.style.height = vh() + 'px';
+          canvas.style.transform = '';
+        } else {
+          // Landscape mobile: حافظ على 16:9 (Letterbox)
+          const W = vw(), H = vh(), aspect = W / H;
+          let drawW, drawH;
+          if (aspect > TARGET_ASPECT) { drawH = H; drawW = Math.round(drawH * TARGET_ASPECT); }
+          else { drawW = W; drawH = Math.round(drawW / TARGET_ASPECT); }
+          canvas.style.width = drawW + 'px';
+          canvas.style.height = drawH + 'px';
+          canvas.style.transform = '';
+        }
       }
 
+      // جدولة لتقليل إعادة الحساب
       let scheduled = false;
       const schedule = () => {
         if (scheduled) return;
         scheduled = true;
-        requestAnimationFrame(() => { scheduled = false; sizeToLetterbox(); });
+        requestAnimationFrame(() => { scheduled = false; layout(); });
       };
 
       window.addEventListener('load', schedule, { passive: true });
       window.addEventListener('resize', schedule, { passive: true });
       window.addEventListener('orientationchange', schedule, { passive: true });
-
       if (window.visualViewport) {
         visualViewport.addEventListener('resize', schedule, { passive: true });
         visualViewport.addEventListener('scroll', schedule, { passive: true });
       }
 
-      // Initial
-      sizeToLetterbox();
+      // تشغيل أولي
+      layout();
       document.body.style.overscrollBehavior = 'none';
     })();
   </script>
 
-  <!-- Fullscreen helpers (iOS/iPad first-class) -->
+  <!-- Helpers: Fullscreen قوي + بديل وهمي -->
   <script>
+    // --- Fullscreen helpers ---
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
     function canUseFullscreen() {
       return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
     }
@@ -163,32 +170,33 @@
       throw new Error('Fullscreen API not available on element');
     }
 
+    function exitFullscreen() {
+      if (document.exitFullscreen) return document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+    }
+
     function isInFullscreen() {
       return !!(document.fullscreenElement || document.webkitFullscreenElement);
     }
 
+    // Fallback “fake fullscreen” for stubborn iOS/PWA
     function enableFakeFullscreen() {
       document.documentElement.classList.add('fake-fs');
       document.body.classList.add('fake-fs');
-      setTimeout(() => window.scrollTo(0, 1), 30);
+      // محاولة إخفاء الأشرطة
+      setTimeout(() => window.scrollTo(0, 1), 50);
     }
     function disableFakeFullscreen() {
       document.documentElement.classList.remove('fake-fs');
       document.body.classList.remove('fake-fs');
     }
 
-    async function tryLockOrientation() {
-      try {
-        if (screen.orientation && screen.orientation.lock) {
-          await screen.orientation.lock('landscape'); // best-effort; ignored if not allowed
-        }
-      } catch (_) {}
-    }
-
+    // Try hard to go fullscreen on first user gesture
     async function enterFullscreenStrong() {
-      const canvas = document.getElementById('unity-canvas');
-      const container = document.getElementById('unity-container');
       try {
+        const canvas = document.getElementById('unity-canvas');
+        const container = document.getElementById('unity-container');
+
         if (canUseFullscreen()) {
           try {
             await requestFullscreenOn(canvas);
@@ -199,18 +207,18 @@
               await requestFullscreenOn(document.documentElement);
             }
           }
-          // Try orientation lock inside FS (Safari iOS 16+ sometimes honors this)
-          tryLockOrientation();
         } else {
+          // Older iOS / PWA windowed mode
           enableFakeFullscreen();
         }
       } catch (err) {
-        // If native FS rejected, use fake
+        // As a last resort, fake FS
         enableFakeFullscreen();
-        console.warn('Native fullscreen failed; using fake fullscreen:', err);
+        console.warn('Native fullscreen failed, using fake:', err);
       }
     }
 
+    // Keep layout/state correct when FS toggles
     document.addEventListener('fullscreenchange', () => {
       if (!isInFullscreen()) disableFakeFullscreen();
     });
@@ -219,7 +227,7 @@
     });
   </script>
 
-  <!-- Unity boot + request fullscreen on first user gesture -->
+  <!-- تحميل Unity + Fullscreen مرة واحدة عند أول تفاعل -->
   <script>
     window.addEventListener("load", function () {
       const canvas = document.querySelector("#unity-canvas");
@@ -255,15 +263,16 @@
       };
       document.body.appendChild(script);
 
-      // Request fullscreen at very first gesture (works for iOS/iPad)
+      // اطلب ملء الشاشة عند أول تفاعل (مناسب للموبايل و iPad iOS)
       function enterFSOnce() {
         enterFullscreenStrong();
         window.removeEventListener('pointerdown', enterFSOnce);
         window.removeEventListener('touchstart', enterFSOnce);
         window.removeEventListener('click', enterFSOnce);
       }
-      // Use pointerdown so the request happens before Unity might swallow the event
+      // استخدم pointerdown (يشمل اللمس والماوس) قبل أن يلتقط Unity الإدخال
       window.addEventListener('pointerdown', enterFSOnce, { once: true, passive: true });
+      // ضمان إضافي لبعض الأجهزة
       window.addEventListener('touchstart', enterFSOnce, { once: true, passive: true });
       window.addEventListener('click', enterFSOnce, { once: true, passive: true });
     });
